@@ -150,12 +150,13 @@ colormaps = (
     ((255, 100, 100),(255, 200, 100),(255, 255, 100),(100, 255, 100),(100, 255, 255),(100, 100, 255), (200, 100, 255), (255, 100, 255)), # red, orange, yellow, green, cyan, blue, purple, magenta, 
     ((255, 100, 100),(255, 200, 100),(255, 255, 100)), # red, orange, yellow
     ((250,100, 100),(210, 120, 120),(170,140,140), (130, 160, 160),(90, 180, 180),(130, 160, 160),(170, 140, 140),(210, 120, 120)), # all red and cyan
+    ((250, 200, 100),(200, 100, 250),(100, 250, 200), (200, 250, 100),(100, 200, 250)),
     )
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument('-n', dest="n", metavar='n', type=int, help='how many iterations should be run on every pixel (recommended ~ 20)', default=15)
-    parser.add_argument('-c', dest="c", metavar='c', type=int, choices=range(4), help='which colormap to use', default=1)
+    parser.add_argument('-c', dest="c", metavar='c', type=int, choices=range(len(colormaps)), help='which colormap to use', default=1)
     args = parser.parse_args()
 
     # set beginning gradient
