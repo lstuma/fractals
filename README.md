@@ -13,9 +13,9 @@ $ python3 mandelbrot.py -c 0
 ```
 ![mandelbrot set](https://imgur.com/f6aljzF.png)
 ```bash
-$ python3 mandelbrot.py -n 1000
+$ python3 mandelbrot.py -n 10000
 ```
-![mandelbrot set 2](https://i.imgur.com/SS5OQud.jpeg)
+![mandelbrot set 2](https://i.imgur.com/qj82sdd.png)
 ### Other fractals
 ```bash
 $ python3 pentagon.py
