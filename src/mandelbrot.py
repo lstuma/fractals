@@ -4,6 +4,7 @@ from rich import print
 from random import randint
 import numpy as np
 import math
+import argparse
 
 # base setup
 height, width = 900, 900
@@ -17,55 +18,80 @@ pitch = width * rgb_channels
 window = pyglet.window.Window(width, height)
 
 class Fractal:
-    # colors depending on which vertex is selected
-    colors = {
-        0: (255,120,120),
-        1: (255,255,100),
-        2: (120,255,255),
-    }
-
-    def __init__(self, x, y):
+    def __init__(self, x, y, clarity, colors):
         self.x, self.y = x, y
-        # holds pyglet shapes of points
-        self.points = []
         # amount of points calculated
         self.pointc = 0
         # last generated point
         self.last = [0,0]
+
+        # for prerender
+        self.pixelsize = 10
         
         self.done = False
+
+        self.offset = [0, 0]
+        self.zoom = 1
+
+        self.colors = colors
+        self.colorc = len(self.colors)
+
+        self.clarity = clarity
+
+        self.rerender()
+
+    def move(self, x, y):
+        self.offset[0] += x
+        self.offset[1] += y
+        self.rerender()
+
+    def rerender(self):
+        # reset rendering status
+        self.pointc = 0
+        self.done = False
+        self.last = [0,0]
+
+        # for prerender
+        self.pixelsize = 20
+
         
-    def gen_next(self):
-        self.last[0] += 1
-        if self.last[0] >= width:
-            if self.last[1] >= height-1:
+    def gen_row(self):
+        while(self.last[0] <= width-self.pixelsize):
+            self.gen_point(*self.last)
+            self.last[0] += self.pixelsize    
+
+        self.last[1] += self.pixelsize
+        self.last[0] = 0
+        
+        if self.last[1] >= height-self.pixelsize+1:
+            if self.pixelsize > 1:
+                self.pixelsize //= 4
+                self.last = [0,0]
+            else:
                 self.done = True
-                return
-            self.last[1] += 1
-            self.last[0] = 0
             
-        self.gen_point(*self.last)
 
     def gen_point(self, x, y):
         # position relative to middle of fractal (coordinates)
-        _x = (x - self.x) * .003
-        _y = (y - self.y) * .003
+        _x = (x - self.x + self.offset[0]) * .003 * self.zoom
+        _y = (y - self.y - self.offset[1]) * .003 * self.zoom
         # calculate value for point
         n = self.calc_point(_x-.5, _y)
-        #print(_x, _y, n, end="\r")
         # calculate color
         color = (0, 0, 0)
         if n != math.inf and n > 0:
-            color = Fractal.colors[n%3]
+            color = self.colors[n%self.colorc]
         elif n == 0:
             color = (255, 255, 255)
-        # add shape for point
-        set_color(x, y, color=color)
+        for i in range(self.pixelsize):
+            for j in range(self.pixelsize):
+                # add shape for point
+                set_color(x+i, y+j, color=color)
         self.pointc += 1
-        
+    
     def calc_point(self, c1, c2):
         z1, z2 = 0, 0
-        for i in range(20):
+        for i in range(self.clarity):
             _z1 = c1+z1*z1-z2*z2       # 0.1²+2*0.1²*i+0.1²*i²
             z2 = c2+2*z1*z2       #
             z1 = _z1
@@ -73,21 +99,40 @@ class Fractal:
                 return i
         return math.inf
 
-f = Fractal(width//2, height//2)
-#for i in range(300):
-#    print(f.calc_point(i*.01, i*.01))
-
 def set_color(x,y,color):
     for c in range(3):
         screen[y, x, c] = color[c]
 
 @window.event
+def on_key_press(symbol, modifiers):
+    match(symbol):
+        # left
+        case 65361:
+            f.move(-70, 0)
+        # up
+        case 65362:
+            f.move(0, 70)
+        # right
+        case 65363:
+            f.move(70, 0)
+        # down
+        case 65364:
+            f.move(0, -70)
+        # plus +
+        case 43:
+            f.zoom *= 0.5
+            f.move(f.offset[0], f.offset[1])
+        # minus -
+        case 45:
+            f.zoom *= 2
+            f.move(-f.offset[0]*.5, -f.offset[1]*.5)
+
+@window.event
 def on_draw():
     # generate a few new points if not enough have been already generated
-    print(f.pointc, end="\r")
-    if not f.done:
-        for i in range(10000):
-            f.gen_next()
+    for i in range(50):
+        if not f.done:
+            f.gen_row()
     # reset pixelmap for drawing
     image_data = pyglet.image.ImageData(
         width, height, img_format, screen.tobytes(), pitch
@@ -98,9 +143,26 @@ def on_draw():
     # redraw everything
     window.clear()
     image_data.blit(0, 0)
-
-for j in range(height):
-    for i in range(width):
-        screen[j, i, 1] = round((j / height) * max_color)
         
-pyglet.app.run()
+# alternate colormaps
+colormaps = (
+    ((255,120,200),(255,255,100),(120,255,255)), # magenta, yellow, cyan
+    ((255, 100, 100),(255, 200, 100),(255, 255, 100),(100, 255, 100),(100, 255, 255),(100, 100, 255), (200, 100, 255), (255, 100, 255)), # red, orange, yellow, green, cyan, blue, purple, magenta, 
+    ((255, 100, 100),(255, 200, 100),(255, 255, 100)), # red, orange, yellow
+    ((250,100, 100),(210, 120, 120),(170,140,140), (130, 160, 160),(90, 180, 180),(130, 160, 160),(170, 140, 140),(210, 120, 120)), # all red and cyan
+    )
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-n', dest="n", metavar='n', type=int, help='how many iterations should be run on every pixel (recommended ~ 20)', default=15)
+    parser.add_argument('-c', dest="c", metavar='c', type=int, choices=range(4), help='which colormap to use', default=1)
+    args = parser.parse_args()
+
+    # set beginning gradient
+    for j in range(height):
+        for i in range(width):
+            screen[j, i, 1] = round((j / height) * max_color)
+
+    f = Fractal(width//2, height//2, args.n, colormaps[args.c])
+
+    pyglet.app.run()
