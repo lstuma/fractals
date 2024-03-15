@@ -7,6 +7,7 @@ $ python3 sierpinski.py
 ```
 ![sierpinski's triangle](https://i.imgur.com/HoLXIrn.png)
 ### Mandelbrot set
+You can use the arrow keys and + and minus buttons to move and zoom the fractal.
 ```bash
 $ python3 mandelbrot.py -c 0
 ```
