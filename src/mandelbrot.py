@@ -19,9 +19,9 @@ window = pyglet.window.Window(width, height)
 class Fractal:
     # colors depending on which vertex is selected
     colors = {
-        0: (255,220,220),
-        1: (255,255,200),
-        2: (220,255,255),
+        0: (255,120,120),
+        1: (255,255,100),
+        2: (120,255,255),
     }
 
     def __init__(self, x, y):
